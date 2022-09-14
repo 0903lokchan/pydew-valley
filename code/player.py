@@ -12,8 +12,6 @@ class Player(pygame.sprite.Sprite):
         self.status = 'down_idle'
         self.frame_index = 0
         
-        print(self.animations)
-        
         # general setup
         self.image = self.animations[self.status][self.frame_index]
         self.rect = self.image.get_rect(center = pos)
@@ -34,6 +32,13 @@ class Player(pygame.sprite.Sprite):
         for animation in self.animations.keys():
             full_path = './graphics/character/' + animation
             self.animations[animation] = import_folder(full_path)
+        
+    def animate(self, dt):
+        self.frame_index += 4 * dt
+        if self.frame_index >= len(self.animations[self.status]):
+            self.frame_index = 0
+        self.image = self.animations[self.status][int(self.frame_index)]
+        
         
     def input(self) -> None:
         keys = pygame.key.get_pressed()
@@ -70,3 +75,4 @@ class Player(pygame.sprite.Sprite):
     def update(self, dt: float) -> None:
         self.input()
         self.move(dt)
+        self.animate(dt)
