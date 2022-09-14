@@ -1,2 +1,5 @@
 # venv folder
 /pydew_valley_env
+
+# pycache
+**.pyc
