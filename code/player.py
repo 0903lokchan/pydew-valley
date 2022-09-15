@@ -6,7 +6,7 @@ from settings import *
 from support import *
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos: Tuple[int, int], group: AbstractGroup) -> None:
+    def __init__(self, pos: Tuple[int, int], group: AbstractGroup, collision_sprites) -> None:
         super().__init__(group)
         
         self.import_assets()
@@ -22,6 +22,10 @@ class Player(pygame.sprite.Sprite):
         self.direction = pygame.math.Vector2()
         self.pos = pygame.math.Vector2(self.rect.center)
         self.speed = 200
+        
+        # collision
+        self.hitbox = self.rect.copy().inflate((-126, -70))
+        self.collision_sprites = collision_sprites
         
         # timers
         self.timers = {
@@ -120,6 +124,28 @@ class Player(pygame.sprite.Sprite):
         if self.timers['tool use'].active:
             self.status = self.status.split('_')[0] + '_' + self.selected_tool
             
+            
+    def collision(self, direction):
+        for sprite in self.collision_sprites.sprites():
+            if hasattr(sprite, 'hitbox'):
+                if sprite.hitbox.colliderect(self.hitbox):
+                    if direction == 'horizontal':
+                        if self.direction.x > 0: # moving right
+                            self.hitbox.right = sprite.hitbox.left
+                        if self.direction.x < 0: # moving left
+                            self.hitbox.left = sprite.hitbox.right
+                        self.rect.centerx = self.hitbox.centerx # type: ignore
+                        self.pos.x = self.hitbox.centerx
+                        
+                    if direction == 'vertical':
+                        if self.direction.y > 0: # moving down
+                            self.hitbox.bottom = sprite.hitbox.top
+                        if self.direction.y < 0: # moving up
+                            self.hitbox.top = sprite.hitbox.bottom
+                        self.rect.centery = self.hitbox.centery # type: ignore
+                        self.pos.y = self.hitbox.centery
+            
+            
     def move(self, dt: float) -> None:
         
         # normalising a vector
@@ -128,20 +154,28 @@ class Player(pygame.sprite.Sprite):
             
         # horizontal movement
         self.pos.x += self.direction.x * self.speed * dt
-        self.rect.centerx = self.pos.x # type: ignore
+        self.hitbox.centerx = round(self.pos.x)
+        self.rect.centerx = self.hitbox.centerx # type: ignore
+        self.collision('horizontal')
         # vertical movement
         self.pos.y += self.direction.y * self.speed * dt
-        self.rect.centery = self.pos.y # type: ignore
+        self.hitbox.centery = round(self.pos.y)
+        self.rect.centery = self.hitbox.centery # type: ignore
+        self.collision('vertical')
+    
     
     def use_tool(self) -> None:
         pass
     
+    
     def use_seed(self) -> None:
         pass
+            
             
     def update_timers(self) -> None:
         for timer in self.timers.values():
             timer.update()
+    
     
     def update(self, dt: float) -> None:
         self.input()

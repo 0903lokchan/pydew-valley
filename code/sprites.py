@@ -1,17 +1,18 @@
+from typing import List
 import pygame
 from settings import *
 from pygame.surface import Surface
-from pygame.sprite import AbstractGroup
 
 class Generic(pygame.sprite.Sprite):
-    def __init__(self, pos, surf: Surface, groups: AbstractGroup, z:int = LAYERS['main']) -> None:
+    def __init__(self, pos, surf: Surface, groups, z:int = LAYERS['main']) -> None:
         super().__init__(groups)
         self.image = surf
         self.rect = self.image.get_rect(topleft = pos)
         self.z = z
+        self.hitbox = self.rect.copy().inflate(-self.rect.width * 0.2, -self.rect.height * 0.75)
         
 class Water(Generic):
-    def __init__(self, pos, frames, groups: AbstractGroup) -> None:
+    def __init__(self, pos, frames, groups) -> None:
         
         # animation setup
         self.frames = frames
@@ -29,10 +30,11 @@ class Water(Generic):
         self.animate(dt)
         
 class WildFlower(Generic):
-    def __init__(self, pos, surf: Surface, groups: AbstractGroup) -> None:
+    def __init__(self, pos, surf: Surface, groups) -> None:
         super().__init__(pos, surf, groups, LAYERS['main'])
+        self.hitbox = self.rect.copy().inflate(-20, -self.rect.height * 0.9) # type: ignore
         
 class Tree(Generic):
-    def __init__(self, pos, surf: Surface, groups: AbstractGroup, name: str) -> None:
+    def __init__(self, pos, surf: Surface, groups, name: str) -> None:
         super().__init__(pos, surf, groups, LAYERS['main'])
         
