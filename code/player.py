@@ -6,7 +6,7 @@ from settings import *
 from support import *
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos: Tuple[int, int], group: AbstractGroup, collision_sprites) -> None:
+    def __init__(self, pos: Tuple[int, int], group: AbstractGroup, collision_sprites: AbstractGroup, tree_sprites: AbstractGroup) -> None:
         super().__init__(group)
         
         self.import_assets()
@@ -44,6 +44,9 @@ class Player(pygame.sprite.Sprite):
         self.seeds = ['corn', 'tomato']
         self.seed_index = 0
         self.selected_seed = self.seeds[self.seed_index]
+        
+        # interaction
+        self.tree_sprites = tree_sprites
         
     def import_assets(self) -> None:
         self.animations = {'up': [], 'down': [], 'left': [], 'right': [],
@@ -128,20 +131,20 @@ class Player(pygame.sprite.Sprite):
     def collision(self, direction):
         for sprite in self.collision_sprites.sprites():
             if hasattr(sprite, 'hitbox'):
-                if sprite.hitbox.colliderect(self.hitbox):
+                if sprite.hitbox.colliderect(self.hitbox): # type: ignore
                     if direction == 'horizontal':
                         if self.direction.x > 0: # moving right
-                            self.hitbox.right = sprite.hitbox.left
+                            self.hitbox.right = sprite.hitbox.left # type: ignore
                         if self.direction.x < 0: # moving left
-                            self.hitbox.left = sprite.hitbox.right
+                            self.hitbox.left = sprite.hitbox.right # type: ignore
                         self.rect.centerx = self.hitbox.centerx # type: ignore
                         self.pos.x = self.hitbox.centerx
                         
                     if direction == 'vertical':
                         if self.direction.y > 0: # moving down
-                            self.hitbox.bottom = sprite.hitbox.top
+                            self.hitbox.bottom = sprite.hitbox.top # type: ignore
                         if self.direction.y < 0: # moving up
-                            self.hitbox.top = sprite.hitbox.bottom
+                            self.hitbox.top = sprite.hitbox.bottom # type: ignore
                         self.rect.centery = self.hitbox.centery # type: ignore
                         self.pos.y = self.hitbox.centery
             
@@ -165,7 +168,19 @@ class Player(pygame.sprite.Sprite):
     
     
     def use_tool(self) -> None:
-        pass
+        if self.selected_tool == 'hoe':
+            pass
+        
+        if self.selected_tool == 'axe':
+            for tree in self.tree_sprites.sprites():
+                if tree.rect.collidepoint(self.target_pos): # type: ignore
+                    tree.damage()  # type: ignore
+        
+        if self.selected_tool == 'water':
+            pass
+        
+    def get_target_pos(self) -> None:
+        self.target_pos = self.rect.center + PLAYER_TOOL_OFFSET[self.status.split('_')[0]] # type: ignore
     
     
     def use_seed(self) -> None:
@@ -181,5 +196,6 @@ class Player(pygame.sprite.Sprite):
         self.input()
         self.get_status()
         self.update_timers()
+        self.get_target_pos()
         self.move(dt)
         self.animate(dt)
