@@ -6,7 +6,7 @@ from settings import *
 from support import *
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos: Tuple[int, int], group: AbstractGroup, collision_sprites: AbstractGroup, tree_sprites: AbstractGroup) -> None:
+    def __init__(self, pos: Tuple[int, int], group: AbstractGroup, collision_sprites: AbstractGroup, tree_sprites: AbstractGroup, interaction: AbstractGroup) -> None:
         super().__init__(group)
         
         self.import_assets()
@@ -55,6 +55,9 @@ class Player(pygame.sprite.Sprite):
         
         # interaction
         self.tree_sprites = tree_sprites
+        self.interaction = interaction
+        
+        self.sleep = False
         
     def import_assets(self) -> None:
         self.animations = {'up': [], 'down': [], 'left': [], 'right': [],
@@ -78,7 +81,7 @@ class Player(pygame.sprite.Sprite):
     def input(self) -> None:
         keys = pygame.key.get_pressed()
         
-        if not self.timers['tool use'].active:
+        if not self.timers['tool use'].active and not self.sleep:
             # directions
             if keys[pygame.K_UP]:
                 self.direction.y = -1
@@ -98,31 +101,41 @@ class Player(pygame.sprite.Sprite):
             else:
                 self.direction.x = 0
             
-        # tool use
-        if keys[pygame.K_SPACE]:
-            # timer for the tool use
-            self.timers['tool use'].activate()
-            self.direction = pygame.math.Vector2()
-            self.frame_index = 0
+            # tool use
+            if keys[pygame.K_SPACE]:
+                # timer for the tool use
+                self.timers['tool use'].activate()
+                self.direction = pygame.math.Vector2()
+                self.frame_index = 0
             
-        # change tool
-        if keys[pygame.K_q] and not self.timers['tool switch'].active:
-            self.timers['tool switch'].activate()
-            self.tool_index = self.tool_index + 1 if self.tool_index < len(self.tools) - 1 else 0
-            self.selected_tool = self.tools[self.tool_index]
+            # change tool
+            if keys[pygame.K_q] and not self.timers['tool switch'].active:
+                self.timers['tool switch'].activate()
+                self.tool_index = self.tool_index + 1 if self.tool_index < len(self.tools) - 1 else 0
+                self.selected_tool = self.tools[self.tool_index]
+                
+            # seed use
+            if keys[pygame.K_LCTRL]:
+                # timer for the tool use
+                self.timers['seed use'].activate()
+                self.direction = pygame.math.Vector2()
+                self.frame_index = 0 
             
-        # seed use
-        if keys[pygame.K_LCTRL]:
-            # timer for the tool use
-            self.timers['seed use'].activate()
-            self.direction = pygame.math.Vector2()
-            self.frame_index = 0 
-        
-        # change seed
-        if keys[pygame.K_e] and not self.timers['seed switch'].active:
-            self.timers['seed switch'].activate()
-            self.seed_index = self.seed_index + 1 if self.seed_index < len(self.seeds) - 1 else 0
-            self.selected_seed = self.seeds[self.seed_index]
+            # change seed
+            if keys[pygame.K_e] and not self.timers['seed switch'].active:
+                self.timers['seed switch'].activate()
+                self.seed_index = self.seed_index + 1 if self.seed_index < len(self.seeds) - 1 else 0
+                self.selected_seed = self.seeds[self.seed_index]
+            
+            # interact
+            if keys[pygame.K_RETURN]:
+                collided_interaction_sprite = pygame.sprite.spritecollide(self, self.interaction, False)
+                if collided_interaction_sprite:
+                    if collided_interaction_sprite[0].name == 'Trader': # type: ignore
+                        pass
+                    else:
+                        self.status = 'left_idle'
+                        self.sleep = True
             
             
     def get_status(self) -> None:
