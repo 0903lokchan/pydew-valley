@@ -42,7 +42,7 @@ class Particle(Generic):
         self.duration = duration
         
         # white surface
-        mask_surf = pygame.mask.from_surface(self.image)
+        mask_surf = pygame.mask.from_surface(self.image) # type: ignore
         new_surf = mask_surf.to_surface()
         new_surf.set_colorkey((0, 0, 0))
         self.image = new_surf
@@ -54,7 +54,7 @@ class Particle(Generic):
             self.kill()
         
 class Tree(Generic):
-    def __init__(self, pos, surf: Surface, groups, name: str) -> None:
+    def __init__(self, pos, surf: Surface, groups, name: str, player_add) -> None:
         super().__init__(pos, surf, groups, LAYERS['main'])
         
         # tree attributes
@@ -68,6 +68,8 @@ class Tree(Generic):
         self.apple_sprites = pygame.sprite.Group()
         self.create_fruit()
         
+        self.player_add = player_add
+        
     def damage(self):
         
         # damaging the tree
@@ -77,6 +79,7 @@ class Tree(Generic):
         if len(self.apple_sprites.sprites()) > 0:
             random_apple = choice(self.apple_sprites.sprites())
             Particle(pos=random_apple.rect.topleft, surf=random_apple.image, groups=self.groups()[0], z=LAYERS['fruit']) # type: ignore
+            self.player_add('apple')
             random_apple.kill()
             
     def check_death(self):
@@ -86,6 +89,7 @@ class Tree(Generic):
             self.rect = self.image.get_rect(midbottom = self.rect.midbottom) # type: ignore
             self.hitbox = self.rect.copy().inflate(-10, -self.rect.height * 0.6)
             self.alive = False # type: ignore
+            self.player_add('wood')
             
     def update(self, dt) -> None:
         if self.alive:
