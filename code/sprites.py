@@ -42,7 +42,7 @@ class Particle(Generic):
         self.duration = duration
         
         # white surface
-        mask_surf = pygame.mask.from_surface(self.image)
+        mask_surf = pygame.mask.from_surface(self.image) # type: ignore
         new_surf = mask_surf.to_surface()
         new_surf.set_colorkey((0, 0, 0))
         self.image = new_surf
