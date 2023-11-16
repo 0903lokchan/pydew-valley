@@ -1,8 +1,9 @@
+from random import choice
 import pygame
 from pygame.sprite import AbstractGroup
 from settings import *
 from pytmx.util_pygame import load_pygame
-from support import import_folder_dict
+from support import import_folder_dict, import_folder
 
 
 class SoilTile(pygame.sprite.Sprite):
@@ -12,16 +13,23 @@ class SoilTile(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(topleft=pos)
         self.z = LAYERS["soil"]
 
+class WaterTile(pygame.sprite.Sprite):
+    def __init__(self, pos, surf, *groups) -> None:
+        super().__init__(*groups)
+        self.image = surf
+        self.rect = self.image.get_rect(topleft = pos)
+        self.z = LAYERS['soil water']
 
 class SoilLayer:
     def __init__(self, all_sprites: AbstractGroup) -> None:
         # sprite groups
         self.all_sprites = all_sprites
         self.soil_sprites = pygame.sprite.Group()
+        self.water_sprites = pygame.sprite.Group()
 
         # graphics
-        self.soil_surf = pygame.image.load("./graphics/soil/o.png")
         self.soil_surfs = import_folder_dict("./graphics/soil/")
+        self.water_surfs = import_folder("./graphics/soil_water/")
 
         self.create_soil_grid()
         self.create_hit_rects()
@@ -63,6 +71,28 @@ class SoilLayer:
                 if "F" in self.grid[y][x]:
                     self.grid[y][x].append("X")
                     self.create_soil_tiles()
+                    
+    def water(self, target_pos: tuple[int, int])-> None:
+        for soil_sprite in self.soil_sprites.sprites():
+            if soil_sprite.rect.collidepoint(target_pos): # type: ignore
+                # 1. add an entry to the soil grid -> 'W'
+                x = soil_sprite.rect.x // TILE_SIZE # type: ignore
+                y = soil_sprite.rect.y // TILE_SIZE # type: ignore
+                self.grid[y][x].append('W')
+                # 2. create a water sprite
+                pos = soil_sprite.rect.topleft # type: ignore
+                surf = choice(self.water_surfs)
+                WaterTile(pos, surf, [self.all_sprites, self.water_sprites])
+                
+    def remove_water(self):
+        # destroy all water sprites
+        for sprite in self.water_sprites.sprites():
+            sprite.kill()
+        # clean up the grid
+        for row in self.grid:
+            for cell in row:
+                if 'W' in cell:
+                    cell.remove('W')
 
     def create_soil_tiles(self) -> None:
         self.soil_sprites.empty()
