@@ -7,7 +7,7 @@ from pytmx.util_pygame import load_pygame
 from support import *
 from transition import Transition
 from soil import SoilLayer
-from sky import Rain
+from sky import Rain, Sky
 from random import randint
 
 
@@ -28,6 +28,7 @@ class Level:
         self.transition = Transition(self.reset, self.player)
 
         # sky
+        self.sky = Sky()
         self.rain = Rain(self.all_sprites)
         self.raining = randint(0, 9) < 3
         self.soil_layer.raining = self.raining
@@ -123,6 +124,8 @@ class Level:
         self.player.item_inventory[item] += amount
 
     def reset(self):
+        # reset sky color
+        self.sky.start_color = [255, 255, 255]
         # randomize the rain
         self.raining = randint(0, 9) < 3
         # plants
@@ -163,6 +166,9 @@ class Level:
         # rain
         if self.raining:
             self.rain.update()
+
+        # daytime
+        self.sky.display(dt)
 
         # transition overlay
         if self.player.sleep:
