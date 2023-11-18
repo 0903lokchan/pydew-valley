@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Callable
 import pygame
 from pygame.sprite import AbstractGroup
 from game_timer import Timer
@@ -16,6 +16,7 @@ class Player(pygame.sprite.Sprite):
         tree_sprites: AbstractGroup,
         interaction: AbstractGroup,
         soil_layer: SoilLayer,
+        toggle_shop: Callable[[], None]
     ) -> None:
         super().__init__(group)
 
@@ -67,6 +68,7 @@ class Player(pygame.sprite.Sprite):
 
         self.sleep = False
         self.soil_layer = soil_layer
+        self.toggle_shop = toggle_shop
 
     def import_assets(self) -> None:
         self.animations = {
@@ -162,7 +164,7 @@ class Player(pygame.sprite.Sprite):
                 )
                 if collided_interaction_sprite:
                     if collided_interaction_sprite[0].name == "Trader":  # type: ignore
-                        pass
+                        self.toggle_shop()
                     else:
                         self.status = "left_idle"
                         self.sleep = True
