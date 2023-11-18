@@ -2,7 +2,7 @@ import pygame
 from settings import *
 from player import Player
 from overlay import Overlay
-from sprites import Generic, Interaction, Water, WildFlower, Tree
+from sprites import Generic, Interaction, Water, WildFlower, Tree, Particle
 from pytmx.util_pygame import load_pygame
 from support import *
 from transition import Transition
@@ -139,10 +139,24 @@ class Level:
                 apple.kill()
             tree.create_fruit()  # type: ignore
 
+    def plant_collision(self) -> None:
+        # if soil layer is not instantiated yet
+        if not self.soil_layer.plant_sprites:
+            return
+
+        for plant in self.soil_layer.plant_sprites.sprites():
+            if plant.harvestable and plant.rect.colliderect(self.player.hitbox):  # type: ignore
+                self.player_add(plant.plant_type)  # type: ignore
+                plant.kill()
+                Particle(pos=plant.rect.topleft, surf=plant.image, groups=self.all_sprites, z=LAYERS["main"])  # type: ignore
+                x, y = self.soil_layer.get_sprite_grid_coord(plant)
+                self.soil_layer.grid[y][x].remove("P")
+
     def run(self, dt: float) -> None:
         self.display_surface.fill("black")
         self.all_sprites.custom_draw(self.player)
         self.all_sprites.update(dt)
+        self.plant_collision()
 
         self.overlay.display()
 

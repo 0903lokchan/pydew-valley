@@ -60,29 +60,28 @@ class Plant(Sprite):
         self.y_offset = -16 if plant_type == "corn" else -8
         self.rect = self.image.get_rect(midbottom=soil.rect.midbottom + pygame.math.Vector2(0, self.y_offset))  # type: ignore
         self.z = LAYERS["ground plant"]
-        
-    def grow(self)-> None:
+
+    def grow(self) -> None:
         if self.age >= self.max_age:
             return
-        
+
         if not self.rect:
-            raise ValueError('Plant {self} does not have a rect')
+            raise ValueError("Plant {self} does not have a rect")
         if self.check_watered(self.rect.center):
             self.age += self.grow_speed
             self.image = self.frames[int(self.age)]
-            
+
             # Update rect to fit new image
-            self.rect = self.image.get_rect(midbottom=self.soil.rect.midbottom + pygame.math.Vector2(0, self.y_offset)) # type: ignore
-            
+            self.rect = self.image.get_rect(midbottom=self.soil.rect.midbottom + pygame.math.Vector2(0, self.y_offset))  # type: ignore
+
             # Move plant to the main layer so it collides with the character
             if self.age >= 1:
                 self.z = LAYERS["main"]
                 self.hitbox = self.rect.copy().inflate(-26, -self.rect.height * 0.4)
-            
+
             if self.age >= self.max_age:
                 self.age = self.max_age
                 self.harvestable = True
-        
 
 
 class SoilLayer:
@@ -141,17 +140,23 @@ class SoilLayer:
                     self.create_soil_tiles()
                     if self.raining:
                         self.water_all()
-    
-    @staticmethod                    
-    def get_sprite_grid_coord(sprite: Sprite)-> tuple[int, int]:
+
+    @staticmethod
+    def get_sprite_grid_coord(sprite: Sprite) -> tuple[int, int]:
         if not sprite.rect:
             raise ValueError("Sprite {sprite} does not have a rect attribute!")
+
+        if isinstance(sprite, Plant):
+            x = sprite.rect.centerx // TILE_SIZE
+            y = sprite.rect.centery // TILE_SIZE
+            return (x, y)
+
         x = sprite.rect.x // TILE_SIZE
         y = sprite.rect.y // TILE_SIZE
         return (x, y)
-    
+
     @staticmethod
-    def get_pos_grid_coord(pos: tuple[float, float])-> tuple[int, int]:
+    def get_pos_grid_coord(pos: tuple[float, float]) -> tuple[int, int]:
         x = int(pos[0] // TILE_SIZE)
         y = int(pos[1] // TILE_SIZE)
         return (x, y)
@@ -189,10 +194,10 @@ class SoilLayer:
             for cell in row:
                 if "W" in cell:
                     cell.remove("W")
-                    
-    def check_watered(self, pos:tuple[float, float])-> bool:
+
+    def check_watered(self, pos: tuple[float, float]) -> bool:
         x, y = self.get_pos_grid_coord(pos)
-        return 'W' in self.grid[y][x]
+        return "W" in self.grid[y][x]
 
     def plant_seed(self, target_pos: tuple[float, float], seed: str) -> None:
         for soil_sprite in self.soil_sprites.sprites():
@@ -205,12 +210,16 @@ class SoilLayer:
                         plant_type=seed,
                         soil=soil_sprite,
                         check_watered=self.check_watered,
-                        groups=[self.all_sprites, self.plant_sprites, self.collision_sprites],
+                        groups=[
+                            self.all_sprites,
+                            self.plant_sprites,
+                            self.collision_sprites,
+                        ],
                     )
-                    
-    def update_plants(self)-> None:
+
+    def update_plants(self) -> None:
         for plant in self.plant_sprites.sprites():
-            plant.grow() # type: ignore
+            plant.grow()  # type: ignore
 
     def create_soil_tiles(self) -> None:
         self.soil_sprites.empty()
