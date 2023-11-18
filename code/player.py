@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Callable
 import pygame
 from pygame.sprite import AbstractGroup
 from game_timer import Timer
@@ -16,6 +16,7 @@ class Player(pygame.sprite.Sprite):
         tree_sprites: AbstractGroup,
         interaction: AbstractGroup,
         soil_layer: SoilLayer,
+        toggle_shop: Callable[[], None]
     ) -> None:
         super().__init__(group)
 
@@ -58,6 +59,8 @@ class Player(pygame.sprite.Sprite):
 
         # inventory
         self.item_inventory = {"wood": 0, "apple": 0, "corn": 0, "tomato": 0}
+        self.seed_inventory = {'corn': 5, 'tomato': 5}
+        self.money = 200
 
         # interaction
         self.tree_sprites = tree_sprites
@@ -65,6 +68,7 @@ class Player(pygame.sprite.Sprite):
 
         self.sleep = False
         self.soil_layer = soil_layer
+        self.toggle_shop = toggle_shop
 
     def import_assets(self) -> None:
         self.animations = {
@@ -155,12 +159,15 @@ class Player(pygame.sprite.Sprite):
 
             # interact
             if keys[pygame.K_RETURN]:
+                # TODO for testing
+                self.toggle_shop()
+                
                 collided_interaction_sprite = pygame.sprite.spritecollide(
                     self, self.interaction, False
                 )
                 if collided_interaction_sprite:
                     if collided_interaction_sprite[0].name == "Trader":  # type: ignore
-                        pass
+                        self.toggle_shop()
                     else:
                         self.status = "left_idle"
                         self.sleep = True
@@ -226,7 +233,9 @@ class Player(pygame.sprite.Sprite):
         self.target_pos = self.rect.center + PLAYER_TOOL_OFFSET[self.status.split("_")[0]]  # type: ignore
 
     def use_seed(self) -> None:
-        self.soil_layer.plant_seed(self.target_pos, self.selected_seed)
+        if self.seed_inventory[self.selected_seed] > 0:
+            self.soil_layer.plant_seed(self.target_pos, self.selected_seed)
+            self.seed_inventory[self.selected_seed] -= 1
 
     def update_timers(self) -> None:
         for timer in self.timers.values():
