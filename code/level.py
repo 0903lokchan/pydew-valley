@@ -2,7 +2,7 @@ import pygame
 from settings import *
 from player import Player
 from overlay import Overlay
-from sprites import Generic, Interaction, Water, WildFlower, Tree
+from sprites import Generic, Interaction, Water, WildFlower, Tree, Particle
 from pytmx.util_pygame import load_pygame
 from support import *
 from transition import Transition
@@ -22,7 +22,7 @@ class Level:
         self.tree_sprites = pygame.sprite.Group()
         self.interaction_sprites = pygame.sprite.Group()
 
-        self.soil_layer = SoilLayer(self.all_sprites)
+        self.soil_layer = SoilLayer(self.all_sprites, self.collision_sprites)
         self.setup()
         self.overlay = Overlay(self.player)
         self.transition = Transition(self.reset, self.player)
@@ -123,10 +123,12 @@ class Level:
         self.player.item_inventory[item] += amount
 
     def reset(self):
-        # soil
-        self.soil_layer.remove_water()
         # randomize the rain
         self.raining = randint(0, 9) < 3
+        # plants
+        self.soil_layer.update_plants()
+        # soil
+        self.soil_layer.remove_water()
         self.soil_layer.raining = self.raining
         if self.raining:
             self.soil_layer.water_all()
@@ -137,10 +139,24 @@ class Level:
                 apple.kill()
             tree.create_fruit()  # type: ignore
 
+    def plant_collision(self) -> None:
+        # if soil layer is not instantiated yet
+        if not self.soil_layer.plant_sprites:
+            return
+
+        for plant in self.soil_layer.plant_sprites.sprites():
+            if plant.harvestable and plant.rect.colliderect(self.player.hitbox):  # type: ignore
+                self.player_add(plant.plant_type)  # type: ignore
+                plant.kill()
+                Particle(pos=plant.rect.topleft, surf=plant.image, groups=self.all_sprites, z=LAYERS["main"])  # type: ignore
+                x, y = self.soil_layer.get_sprite_grid_coord(plant)
+                self.soil_layer.grid[y][x].remove("P")
+
     def run(self, dt: float) -> None:
         self.display_surface.fill("black")
         self.all_sprites.custom_draw(self.player)
         self.all_sprites.update(dt)
+        self.plant_collision()
 
         self.overlay.display()
 
