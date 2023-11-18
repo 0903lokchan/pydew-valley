@@ -56,6 +56,10 @@ class Plant(pygame.sprite.Sprite):
         self.y_offset = -16 if plant_type == "corn" else -8
         self.rect = self.image.get_rect(midbottom=soil.rect.midbottom + pygame.math.Vector2(0, self.y_offset))  # type: ignore
         self.z = LAYERS["ground plant"]
+        
+    def grow(self)-> None:
+        pass
+        
 
 
 class SoilLayer:
@@ -113,13 +117,20 @@ class SoilLayer:
                     self.create_soil_tiles()
                     if self.raining:
                         self.water_all()
+    
+    @staticmethod                    
+    def get_sprite_grid_coord(sprite: pygame.sprite.Sprite)-> tuple[int, int]:
+        if not sprite.rect:
+            raise ValueError("Sprite {sprite} does not have a rect attribute!")
+        x = sprite.rect.x // TILE_SIZE
+        y = sprite.rect.y // TILE_SIZE
+        return (x, y)
 
     def water(self, target_pos: tuple[int, int]) -> None:
         for soil_sprite in self.soil_sprites.sprites():
             if soil_sprite.rect.collidepoint(target_pos):  # type: ignore
                 # 1. add an entry to the soil grid -> 'W'
-                x = soil_sprite.rect.x // TILE_SIZE  # type: ignore
-                y = soil_sprite.rect.y // TILE_SIZE  # type: ignore
+                x, y = self.get_sprite_grid_coord(soil_sprite)
                 self.grid[y][x].append("W")
                 # 2. create a water sprite
                 pos = soil_sprite.rect.topleft  # type: ignore
@@ -148,12 +159,14 @@ class SoilLayer:
             for cell in row:
                 if "W" in cell:
                     cell.remove("W")
+                    
+    def check_watered(self, pos:tuple[float, float])-> bool:
+        return False
 
     def plant_seed(self, target_pos: tuple[float, float], seed: str) -> None:
         for soil_sprite in self.soil_sprites.sprites():
             if soil_sprite.rect.collidepoint(target_pos):  # type: ignore
-                x = soil_sprite.rect.x // TILE_SIZE  # type: ignore
-                y = soil_sprite.rect.y // TILE_SIZE  # type: ignore
+                x, y = self.get_sprite_grid_coord(soil_sprite)
 
                 if "P" not in self.grid[y][x]:
                     self.grid[y][x].append("P")
