@@ -123,10 +123,12 @@ class Level:
         self.player.item_inventory[item] += amount
 
     def reset(self):
-        # soil
-        self.soil_layer.remove_water()
         # randomize the rain
         self.raining = randint(0, 9) < 3
+        # plants
+        self.soil_layer.update_plants()
+        # soil
+        self.soil_layer.remove_water()
         self.soil_layer.raining = self.raining
         if self.raining:
             self.soil_layer.water_all()

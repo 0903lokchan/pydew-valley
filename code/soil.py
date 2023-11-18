@@ -1,6 +1,6 @@
 from random import choice
 import pygame
-from pygame.sprite import AbstractGroup
+from typing import Callable
 from settings import *
 from pytmx.util_pygame import load_pygame
 from support import import_folder_dict, import_folder
@@ -37,6 +37,7 @@ class Plant(pygame.sprite.Sprite):
         self,
         plant_type: str,
         soil: pygame.sprite.Sprite,
+        check_watered: Callable[[tuple[float, float]], bool],
         groups: list[pygame.sprite.Group],
     ) -> None:
         super().__init__(*groups)
@@ -45,6 +46,7 @@ class Plant(pygame.sprite.Sprite):
         self.plant_type = plant_type
         self.frames = import_folder(f"./graphics/fruit/{plant_type}")
         self.soil = soil
+        self.check_watered = check_watered
 
         # plant growing
         self.age = 0
@@ -58,7 +60,17 @@ class Plant(pygame.sprite.Sprite):
         self.z = LAYERS["ground plant"]
         
     def grow(self)-> None:
-        pass
+        if self.age >= self.max_age:
+            return
+        
+        if not self.rect:
+            raise ValueError('Plant {self} does not have a rect')
+        if self.check_watered(self.rect.center):
+            self.age += self.grow_speed
+            self.image = self.frames[int(self.age)]
+            
+            # Update rect to fit new image
+            self.rect = self.image.get_rect(midbottom=self.soil.rect.midbottom + pygame.math.Vector2(0, self.y_offset)) # type: ignore
         
 
 
@@ -125,6 +137,12 @@ class SoilLayer:
         x = sprite.rect.x // TILE_SIZE
         y = sprite.rect.y // TILE_SIZE
         return (x, y)
+    
+    @staticmethod
+    def get_pos_grid_coord(pos: tuple[float, float])-> tuple[int, int]:
+        x = int(pos[0] // TILE_SIZE)
+        y = int(pos[1] // TILE_SIZE)
+        return (x, y)
 
     def water(self, target_pos: tuple[int, int]) -> None:
         for soil_sprite in self.soil_sprites.sprites():
@@ -161,7 +179,8 @@ class SoilLayer:
                     cell.remove("W")
                     
     def check_watered(self, pos:tuple[float, float])-> bool:
-        return False
+        x, y = self.get_pos_grid_coord(pos)
+        return 'W' in self.grid[y][x]
 
     def plant_seed(self, target_pos: tuple[float, float], seed: str) -> None:
         for soil_sprite in self.soil_sprites.sprites():
@@ -173,8 +192,13 @@ class SoilLayer:
                     Plant(
                         plant_type=seed,
                         soil=soil_sprite,
+                        check_watered=self.check_watered,
                         groups=[self.all_sprites, self.plant_sprites],
                     )
+                    
+    def update_plants(self)-> None:
+        for plant in self.plant_sprites.sprites():
+            plant.grow() # type: ignore
 
     def create_soil_tiles(self) -> None:
         self.soil_sprites.empty()
