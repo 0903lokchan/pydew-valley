@@ -1,17 +1,18 @@
 from random import choice
 import pygame
+from pygame.sprite import Sprite, Group
 from typing import Callable
 from settings import *
 from pytmx.util_pygame import load_pygame
 from support import import_folder_dict, import_folder
 
 
-class SoilTile(pygame.sprite.Sprite):
+class SoilTile(Sprite):
     def __init__(
         self,
         pos: tuple[float, float],
         surf: pygame.Surface,
-        groups: list[pygame.sprite.Group],
+        groups: list[Group],
     ) -> None:
         super().__init__(*groups)
         self.image = surf
@@ -19,12 +20,12 @@ class SoilTile(pygame.sprite.Sprite):
         self.z = LAYERS["soil"]
 
 
-class WaterTile(pygame.sprite.Sprite):
+class WaterTile(Sprite):
     def __init__(
         self,
         pos: tuple[float, float],
         surf: pygame.Surface,
-        groups: list[pygame.sprite.Group],
+        groups: list[Group],
     ) -> None:
         super().__init__(*groups)
         self.image = surf
@@ -32,13 +33,13 @@ class WaterTile(pygame.sprite.Sprite):
         self.z = LAYERS["soil water"]
 
 
-class Plant(pygame.sprite.Sprite):
+class Plant(Sprite):
     def __init__(
         self,
         plant_type: str,
-        soil: pygame.sprite.Sprite,
+        soil: Sprite,
         check_watered: Callable[[tuple[float, float]], bool],
-        groups: list[pygame.sprite.Group],
+        groups: list[Group],
     ) -> None:
         super().__init__(*groups)
 
@@ -52,6 +53,7 @@ class Plant(pygame.sprite.Sprite):
         self.age = 0
         self.max_age = len(self.frames) - 1
         self.grow_speed = GROW_SPEED[plant_type]
+        self.harvestable = False
 
         # sprite setup
         self.image = self.frames[self.age]
@@ -71,16 +73,26 @@ class Plant(pygame.sprite.Sprite):
             
             # Update rect to fit new image
             self.rect = self.image.get_rect(midbottom=self.soil.rect.midbottom + pygame.math.Vector2(0, self.y_offset)) # type: ignore
+            
+            # Move plant to the main layer so it collides with the character
+            if self.age >= 1:
+                self.z = LAYERS["main"]
+                self.hitbox = self.rect.copy().inflate(-26, -self.rect.height * 0.4)
+            
+            if self.age >= self.max_age:
+                self.age = self.max_age
+                self.harvestable = True
         
 
 
 class SoilLayer:
-    def __init__(self, all_sprites: pygame.sprite.Group) -> None:
+    def __init__(self, all_sprites: Group, collision_sprites: Group) -> None:
         # sprite groups
         self.all_sprites = all_sprites
-        self.soil_sprites = pygame.sprite.Group()
-        self.water_sprites = pygame.sprite.Group()
-        self.plant_sprites = pygame.sprite.Group()
+        self.collision_sprites = collision_sprites
+        self.soil_sprites = Group()
+        self.water_sprites = Group()
+        self.plant_sprites = Group()
 
         # graphics
         self.soil_surfs = import_folder_dict("./graphics/soil/")
@@ -131,7 +143,7 @@ class SoilLayer:
                         self.water_all()
     
     @staticmethod                    
-    def get_sprite_grid_coord(sprite: pygame.sprite.Sprite)-> tuple[int, int]:
+    def get_sprite_grid_coord(sprite: Sprite)-> tuple[int, int]:
         if not sprite.rect:
             raise ValueError("Sprite {sprite} does not have a rect attribute!")
         x = sprite.rect.x // TILE_SIZE
@@ -193,7 +205,7 @@ class SoilLayer:
                         plant_type=seed,
                         soil=soil_sprite,
                         check_watered=self.check_watered,
-                        groups=[self.all_sprites, self.plant_sprites],
+                        groups=[self.all_sprites, self.plant_sprites, self.collision_sprites],
                     )
                     
     def update_plants(self)-> None:
