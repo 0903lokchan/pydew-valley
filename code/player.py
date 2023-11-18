@@ -226,7 +226,7 @@ class Player(pygame.sprite.Sprite):
         self.target_pos = self.rect.center + PLAYER_TOOL_OFFSET[self.status.split("_")[0]]  # type: ignore
 
     def use_seed(self) -> None:
-        pass
+        self.soil_layer.plant_seed(self.target_pos, self.selected_seed)
 
     def update_timers(self) -> None:
         for timer in self.timers.values():
