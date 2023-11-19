@@ -33,10 +33,17 @@ class Level:
         self.rain = Rain(self.all_sprites)
         self.raining = randint(0, 9) < 3
         self.soil_layer.raining = self.raining
-        
+
         # shop
         self.menu = Menu(self.player, self.toggle_shop)
         self.shop_active = False
+
+        # sounds
+        self.bg_sound = pygame.mixer.Sound("./audio/music.mp3")
+        self.bg_sound.set_volume(0.2)
+        self.bg_sound.play(loops=-1)
+        self.success = pygame.mixer.Sound("./audio/success.wav")
+        self.success.set_volume(0.3)
 
     def setup(self) -> None:
         tmx_data = load_pygame("./data/map.tmx")
@@ -108,7 +115,7 @@ class Level:
                     tree_sprites=self.tree_sprites,
                     interaction=self.interaction_sprites,
                     soil_layer=self.soil_layer,
-                    toggle_shop = self.toggle_shop
+                    toggle_shop=self.toggle_shop,
                 )
             if obj.name == "Bed":
                 Interaction(
@@ -117,7 +124,7 @@ class Level:
                     self.interaction_sprites,
                     obj.name,
                 )
-                
+
             if obj.name == "Trader":
                 Interaction(
                     (obj.x, obj.y),
@@ -136,8 +143,9 @@ class Level:
 
     def player_add(self, item: str, amount: int = 1):
         self.player.item_inventory[item] += amount
-        
-    def toggle_shop(self)-> None:
+        self.success.play()
+
+    def toggle_shop(self) -> None:
         self.shop_active = not self.shop_active
 
     def reset(self):
@@ -173,11 +181,10 @@ class Level:
                 self.soil_layer.grid[y][x].remove("P")
 
     def run(self, dt: float) -> None:
-        
         # drawing logic
         self.display_surface.fill("black")
         self.all_sprites.custom_draw(self.player)
-        
+
         # updates
         if self.shop_active:
             self.menu.update()

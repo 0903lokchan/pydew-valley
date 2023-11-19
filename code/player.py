@@ -69,6 +69,10 @@ class Player(pygame.sprite.Sprite):
         self.sleep = False
         self.soil_layer = soil_layer
         self.toggle_shop = toggle_shop
+        
+        #sound
+        self.watering = pygame.mixer.Sound('./audio/water.mp3')
+        self.watering.set_volume(0.2)
 
     def import_assets(self) -> None:
         self.animations = {
@@ -227,6 +231,7 @@ class Player(pygame.sprite.Sprite):
                     tree.damage()  # type: ignore
 
         if self.selected_tool == "water":
+            self.watering.play()
             self.soil_layer.water(self.target_pos)
 
     def get_target_pos(self) -> None:
