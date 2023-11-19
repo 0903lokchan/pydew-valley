@@ -101,10 +101,11 @@ class SoilLayer:
         self.create_hit_rects()
         self.raining = False
 
-        # requirements
-        # if the area is farmable
-        # if the soil has been watered
-        # if the soil has a plant
+        # sounds
+        self.hoe_sound = pygame.mixer.Sound("./audio/hoe.wav")
+        self.hoe_sound.set_volume(0.1)
+        self.plant_sound = pygame.mixer.Sound("./audio/plant.wav")
+        self.plant_sound.set_volume(0.2)
 
     def create_soil_grid(self) -> None:
         ground = pygame.image.load("./graphics/world/ground.png")
