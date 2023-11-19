@@ -18,10 +18,8 @@ class SoundManager:
 
         # search for audio files
         supported_formats = ("mp3", "wav")
-        glob_patterns = [
-            f"{self.audio_dir}/*.{extension}" for extension in supported_formats
-        ]
         audio_files: list[Path] = []
+        glob_patterns = [f"*.{extension}" for extension in supported_formats]
         for glob_pattern in glob_patterns:
             audio_files += self.audio_dir.glob(glob_pattern)
         logging.info(f"Found {len(audio_files)} audio files in {self.audio_dir}")
