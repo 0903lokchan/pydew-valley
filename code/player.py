@@ -163,9 +163,6 @@ class Player(pygame.sprite.Sprite):
 
             # interact
             if keys[pygame.K_RETURN]:
-                # TODO for testing
-                self.toggle_shop()
-                
                 collided_interaction_sprite = pygame.sprite.spritecollide(
                     self, self.interaction, False
                 )
