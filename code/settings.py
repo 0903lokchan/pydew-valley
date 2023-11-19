@@ -38,3 +38,13 @@ GROW_SPEED = {"corn": 1, "tomato": 0.7}
 
 SALE_PRICES = {"wood": 4, "apple": 2, "corn": 10, "tomato": 20}
 PURCHASE_PRICES = {"corn": 4, "tomato": 5}
+
+SOUND_VOLUMES: dict[str, float] = {
+    "axe": 0.4,
+    "bg": 1,
+    "hoe": 0.1,
+    "music": 0.2,
+    "plant": 0.2,
+    "success": 0.3,
+    "water": 0.2
+}
